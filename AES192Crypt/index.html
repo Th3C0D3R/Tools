@@ -144,7 +144,6 @@
 
             const res = await fetch(url);
             const data = await res.json();
-
             if (data["success"]) {
                 document.getElementById("output").value = data.success;
             }
