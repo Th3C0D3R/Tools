@@ -106,6 +106,30 @@
             transform: translateY(0);
             box-shadow: 0 2px 8px rgb(14 60 106 / 0.5);
         }
+
+        .toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px;
+            position: fixed;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            z-index: 9999;
+            font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -129,6 +153,11 @@
 
         <label for="output">Output:</label>
         <textarea id="output" placeholder="Result"></textarea>
+
+        <div class="buttons">
+            <button onclick="copyOutput()">Copy Output</button>
+        </div>
+        <div id="toast" class="toast">Copied to clipboard!</div>
     </div>
 
     <script>
@@ -138,9 +167,9 @@
             const text = document.getElementById('text').value;
 
             const url = new URL("/aes192", window.location.origin);
-            url.searchParams.set('s',secret);
-            url.searchParams.set('p',password);
-            url.searchParams.set('t',text);
+            url.searchParams.set('s', secret);
+            url.searchParams.set('p', password);
+            url.searchParams.set('t', text);
 
             const res = await fetch(url);
             const data = await res.json();
@@ -159,10 +188,10 @@
             const text = document.getElementById('text').value;
 
             const url = new URL("/aes192", window.location.origin);
-            url.searchParams.set('s',secret);
-            url.searchParams.set('p',password);
-            url.searchParams.set('t',text);
-            url.searchParams.set('d','');
+            url.searchParams.set('s', secret);
+            url.searchParams.set('p', password);
+            url.searchParams.set('t', text);
+            url.searchParams.set('d', '');
 
             const res = await fetch(url);
             const data = await res.json();
@@ -174,6 +203,48 @@
                 if (data["error"])
                     alert(data["error"]);
             }
+        }
+
+        function copyOutput() {
+            const outputEl = document.getElementById('output');
+
+            if (!outputEl) return;
+
+            const textToCopy = outputEl.value || outputEl.textContent;
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(showToast)
+                    .catch(() => {
+                        fallbackSelect(outputEl);
+                        showToast('Text selected — press Ctrl+C');
+                    });
+            } else {
+                fallbackSelect(outputEl);
+                showToast('Text selected — press Ctrl+C');
+            }
+        }
+
+        function fallbackSelect(el) {
+            if (el.select) {
+                el.select();
+            } else {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+
+        function showToast(message = 'Copied to clipboard!') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
         }
     </script>
 </body>
